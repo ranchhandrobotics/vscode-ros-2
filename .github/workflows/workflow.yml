@@ -1,0 +1,83 @@
+on:
+  push:
+    paths-ignore:
+      - "*.md"
+      - "media/documentation/**"
+    branches:
+      - master
+  pull_request:
+    paths-ignore:
+      - "*.md"
+      - "media/documentation/**"
+  release:
+    types:
+      - published
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: npm install
+  archive-vsix:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: npm install
+      - name: Build VSIX package
+        run: |
+          npm install vsce -g
+          npm run compile
+          vsce package -o vscode-ros-dev.vsix
+      - uses: actions/upload-artifact@v1
+        if: github.event_name == 'push'
+        with:
+          name: vscode-ros-dev-vsix
+          path: vscode-ros-dev.vsix
+  publish-vsix:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published' && github.repository == 'ms-iot/vscode-ros'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: npm install
+      - name: Build VSIX package
+        run: |
+          npm install @vscode/vsce -g
+          npm run compile
+      - name: Build Release VSIX package
+        if: '!github.event.release.prerelease'
+        run: |
+          vsce package -o vscode-ros.vsix
+      - name: Build Prerelease VSIX package
+        if: 'github.event.release.prerelease'
+        run: |
+          vsce package --pre-release -o vscode-ros.vsix
+      - name: Publish Release VSIX package
+        if: '!github.event.release.prerelease'
+        run: |
+          vsce publish -p ${{secrets.MARKETPLACE_PUBLISHER_TOKEN}}
+      - name: Publish Prerelease VSIX package
+        if: 'github.event.release.prerelease'
+        run: |
+          vsce publish --pre-release -p ${{secrets.MARKETPLACE_PUBLISHER_TOKEN}}

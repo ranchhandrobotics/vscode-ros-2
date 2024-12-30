@@ -1,0 +1,36 @@
+body {
+  padding-right: 20px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table thead {
+  background: var(--vscode-sideBarSectionHeader-background);
+}
+
+table th {
+  text-align: left;
+}
+
+table td, table th {
+  padding: 6px;
+}
+
+table tbody tr {
+  border-bottom: 1px solid var(--vscode-sideBarSectionHeader-background);
+}
+
+table tbody tr:hover {
+  background: var(--vscode-sideBarSectionHeader-background);
+}
+
+#parameters .name {
+  font-weight: bold;
+}
+
+#parameters ul {
+  padding-left: 20px;
+}
